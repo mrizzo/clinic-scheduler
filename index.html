@@ -227,6 +227,14 @@ async function fetchJSON(name) {
   } catch { return {}; }   // absent file / offline / file:// — treat as empty
 }
 
+// Swap the tab icon to a single emoji (config's `favicon`). The default icon,
+// the drawn dragonfly, stays in the static <link> unless a preset overrides it.
+function setFaviconEmoji(emoji) {
+  const link = document.querySelector("link[rel=icon]");
+  if (link) link.href = "data:image/svg+xml," +
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>${emoji}</text></svg>`;
+}
+
 async function loadConfig() {
   const key = new URLSearchParams(location.search).get("cfg");
   if (!key) return;
@@ -239,6 +247,7 @@ async function loadConfig() {
   if (cfg.location) $("loc").value = cfg.location;
   if (cfg.notesTemplate != null) $("notes").value = cfg.notesTemplate;
   if (cfg.durationMin) $("dur").value = String(cfg.durationMin);
+  if (cfg.favicon) setFaviconEmoji(cfg.favicon);
 }
 
 // Live update on any change. Default the date to 4 weeks out (28 days = the

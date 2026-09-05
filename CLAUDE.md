@@ -46,7 +46,8 @@ Unknown or missing keys fall back to the plain generic tool. A preset entry:
     "title": "Example Clinic — Appointment",
     "location": "Example Clinic, 1-2-3 Somewhere, Tokyo",
     "notesTemplate": "TEL 00-0000-0000\nhttps://example.com\nDoctor: ",
-    "durationMin": 60
+    "durationMin": 60,
+    "favicon": "🏥"
   }
 }
 ```
@@ -56,6 +57,9 @@ Unknown or missing keys fall back to the plain generic tool. A preset entry:
 - `notesTemplate` → seeds the notes box; end it with `Doctor: ` so the user just
   appends the name they saw.
 - `durationMin` → default duration.
+- `favicon` → an **emoji** for the browser-tab icon (e.g. a clinic's mascot).
+  Optional; without it the default drawn **dragonfly** icon stays. Emoji only —
+  the default dragonfly is a bespoke inline SVG, but presets use a single emoji.
 
 Adding a clinic is a `configs.json` edit — no code change. Fields transcribed
 from a card or website (address, phone, hours) should be **verified against the

@@ -44,11 +44,14 @@ Add a clinic by adding an entry — no code change:
     "title": "Example Clinic — Appointment",
     "location": "Example Clinic, 1-2-3 Somewhere, Tokyo",
     "notesTemplate": "TEL 00-0000-0000\nhttps://example.com\nDoctor: ",
-    "durationMin": 60
+    "durationMin": 60,
+    "favicon": "🏥"
   }
 }
 ```
 
+`favicon` (optional) sets the browser-tab icon to an **emoji** for that preset —
+e.g. a clinic's mascot. Without it, the default drawn **dragonfly** icon stays.
 Unknown or missing keys fall back to the plain generic tool. Presets are read
 over `http://` (`fetch`), so use a local server rather than `file://` for them.
 
