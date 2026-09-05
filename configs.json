@@ -3,6 +3,7 @@
     "title": "Example Clinic — Appointment",
     "location": "Example Clinic, 1-2-3 Somewhere, Tokyo",
     "notesTemplate": "TEL 00-0000-0000\nhttps://example.com\nDoctor: ",
-    "durationMin": 60
+    "durationMin": 60,
+    "favicon": "🏥"
   }
 }
