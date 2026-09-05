@@ -7,3 +7,6 @@
 
 # Logs
 *.log
+
+# Private/personal clinic presets — never commit (may name a real doctor)
+configs.local.json
