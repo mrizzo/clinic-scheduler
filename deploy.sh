@@ -21,16 +21,19 @@ set -euo pipefail
 PROJECT="${PAGES_PROJECT:-clinic-scheduler}"
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-# Stage only the static site into ./dist (wrangler.jsonc points assets at it).
-rm -rf dist && mkdir dist
-cp index.html configs.json dist/
+# Stage the site into ./dist/clinic-scheduler so it serves at
+# https://<domain>/clinic-scheduler/. Per the owner's choice, the presets in
+# configs.local.json ARE published here (publicly readable — no auth), so
+# ?cfg=<name> pre-fills work for anyone with the link.
+rm -rf dist && mkdir -p dist/clinic-scheduler
+cp index.html configs.json dist/clinic-scheduler/
 if [[ -f configs.local.json ]]; then
-  cp configs.local.json dist/
+  cp configs.local.json dist/clinic-scheduler/
 else
-  echo "!  configs.local.json not found — deploying without private presets."
+  echo "!  configs.local.json not found — deploying without your presets."
 fi
 
-echo "Staging dist/: $(cd dist && ls | tr '\n' ' ')"
+echo "Staging dist/clinic-scheduler/: $(cd dist/clinic-scheduler && ls | tr '\n' ' ')"
 echo "Deploying to Cloudflare Pages project '$PROJECT'…"
 npx wrangler pages deploy dist --project-name "$PROJECT"
 

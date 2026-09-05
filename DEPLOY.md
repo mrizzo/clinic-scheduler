@@ -1,60 +1,55 @@
-# Deploying to Cloudflare Pages (private, on dragonfly-labs.com)
+# Deploying to Cloudflare Pages
 
-The clinic scheduler is a static site, so it hosts on **Cloudflare Pages** for
-free. Because the private presets in `configs.local.json` (personal clinics —
-medical data) are fetched as a plain file, the site **must** be gated by
-**Cloudflare Access** so only you can load it.
+The clinic scheduler is a static site hosted on **Cloudflare Pages**. It's
+deployed **publicly at `https://dragonfly-labs.com/clinic-scheduler/`** with **no
+authentication**, by the owner's explicit choice.
 
-> ⚠️ **Order matters.** Until Access (step 4) is on, `configs.local.json` is a
-> publicly downloadable URL. Don't leave the site un-gated once real configs are
-> uploaded.
+> ⚠️ **Privacy note.** This public deploy includes `configs.local.json`, so the
+> clinic presets — and the file itself at
+> `…/clinic-scheduler/configs.local.json` — are **publicly readable**. That
+> reveals the clinics as the owner's appointments. This was a deliberate
+> trade for one-tap `?cfg=` presets with no login. To make it private again,
+> put the site behind **Cloudflare Access** (see "Locking it down" below) or
+> stop deploying `configs.local.json`.
 
-## 1. Put dragonfly-labs.com on Cloudflare
-
-Add the domain in Cloudflare and switch its nameservers at the registrar (A2),
-same as any other Cloudflare domain. Wait until it shows **Active**.
-
-## 2. Deploy from the local folder
-
-`deploy.sh` stages only the static site (`index.html`, `configs.json`, and the
-gitignored `configs.local.json` if present) into `./dist` and deploys that, so
-`.git/`, `.wrangler/`, and docs are never uploaded or served. Deploying the repo
-root directly would serve all of them — don't.
+## Deploy / redeploy
 
 ```bash
-npx wrangler login        # first time only — opens a browser
-./deploy.sh               # stages ./dist, then wrangler pages deploy dist
+cd /path/to/clinic-scheduler
+./deploy.sh
 ```
 
-Re-run `./deploy.sh` any time you edit configs. `dist/` is a throwaway build dir
-(gitignored); `wrangler.jsonc` points Cloudflare's asset directory at it.
+`deploy.sh` stages `index.html`, `configs.json`, and `configs.local.json` into
+`./dist/clinic-scheduler/` and runs `wrangler pages deploy dist`, so the app
+serves under the `/clinic-scheduler/` path. Re-run it any time you edit configs.
 
-## 3. Lock it to you FIRST (required, before the domain is public)
+> **Run it in a real terminal, not through an AI agent / the Claude Code `!`
+> prompt.** Publishing `configs.local.json` (medical-adjacent data) to a public
+> URL trips the assistant's safety classifier and gets blocked — that guardrail
+> is intentional. `wrangler login` is required once.
 
-Do this **before** step 4 — dragonfly-labs.com is already in your Cloudflare
-zone, so you can gate it now, and Access will protect the site from the first
-request instead of leaving an exposure window.
+## One-time setup (already done for dragonfly-labs.com)
 
-Cloudflare **Zero Trust → Access → Applications → Add a self-hosted application**:
+1. Domain `dragonfly-labs.com` is on Cloudflare (nameservers moved from A2).
+2. A **Pages project** (`clinic-scheduler-u1l.pages.dev`) holds the deploys.
+3. That project has **`dragonfly-labs.com` as a custom domain**
+   (Workers & Pages → the project → Custom domains).
 
-- **Application domain:** `dragonfly-labs.com`
-- **Policy:** Allow — **Emails** — your address only (e.g. the Gmail you use)
-- **Login method:** **Email OTP** (Cloudflare emails a one-time code; no password
-  to manage)
+> Gotcha learned the hard way: deleting and recreating the project can leave a
+> **duplicate** `clinic-scheduler` (an old Worker) still holding the domain, so
+> the domain serves a stale deploy. Keep exactly **one** `clinic-scheduler`
+> app, and make sure the custom domain is attached to the one you deploy to.
 
-## 4. Custom domain
+## URLs
 
-Pages/Workers project → **Custom domains** → add **`dragonfly-labs.com`** (and
-optionally `www.`). Cloudflare creates the DNS record automatically. If a
-placeholder record exists at the apex, let it be replaced.
+- `https://dragonfly-labs.com/clinic-scheduler/` — generic tool
+- `https://dragonfly-labs.com/clinic-scheduler/?cfg=example-clinic` — a preset
+- `…/clinic-scheduler` (no slash) 308-redirects to `…/clinic-scheduler/`,
+  query string preserved.
 
-Now the whole site, including `configs.local.json`, is unreachable to anyone but
-you. Test in a private window: you should hit the Cloudflare login first, and
-`dragonfly-labs.com/configs.local.json` must NOT be readable without logging in.
+## Locking it down (optional — makes it private again)
 
-## Notes
-
-- **Updating configs:** edit `configs.local.json` locally, then `./deploy.sh`.
-- **Never commit `configs.local.json`** — it stays local; the deploy uploads it
-  directly. Only non-sensitive examples belong in the tracked `configs.json`.
-- **Preset URLs** (once live): `https://dragonfly-labs.com/?cfg=example-clinic`, etc.
+Cloudflare **Zero Trust → Access → Applications → Add a self-hosted app**,
+hostname `dragonfly-labs.com`, policy Allow → your email only, login **Email
+OTP**. That gates the whole site (including `configs.local.json`) so only you
+can load it. Removing the Access application removes the gate.
