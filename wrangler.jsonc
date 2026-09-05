@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "clinic-scheduler",
+  "compatibility_date": "2026-09-03",
+  "observability": {
+    "enabled": true
+  },
+  // deploy.sh stages only the static site into ./dist so nothing else
+  // (.git, .wrangler, docs) is ever uploaded or served.
+  "assets": {
+    "directory": "dist"
+  }
+}

@@ -16,24 +16,24 @@ same as any other Cloudflare domain. Wait until it shows **Active**.
 
 ## 2. Deploy from the local folder
 
-Deploy from disk (not Git) so `configs.local.json` is included — a Git-connected
-deploy skips it because it's `.gitignore`d.
+`deploy.sh` stages only the static site (`index.html`, `configs.json`, and the
+gitignored `configs.local.json` if present) into `./dist` and deploys that, so
+`.git/`, `.wrangler/`, and docs are never uploaded or served. Deploying the repo
+root directly would serve all of them — don't.
 
 ```bash
 npx wrangler login        # first time only — opens a browser
-./deploy.sh               # = npx wrangler pages deploy . --project-name clinic-scheduler
+./deploy.sh               # stages ./dist, then wrangler pages deploy dist
 ```
 
-This uploads `index.html`, `configs.json`, and `configs.local.json`, and prints a
-`clinic-scheduler.pages.dev` URL. Re-run `./deploy.sh` any time you edit configs.
+Re-run `./deploy.sh` any time you edit configs. `dist/` is a throwaway build dir
+(gitignored); `wrangler.jsonc` points Cloudflare's asset directory at it.
 
-## 3. Custom domain
+## 3. Lock it to you FIRST (required, before the domain is public)
 
-Pages project → **Custom domains** → add **`dragonfly-labs.com`** (and optionally
-`www.`). Cloudflare creates the DNS record automatically since the domain is on
-Cloudflare.
-
-## 4. Lock it to you (required)
+Do this **before** step 4 — dragonfly-labs.com is already in your Cloudflare
+zone, so you can gate it now, and Access will protect the site from the first
+request instead of leaving an exposure window.
 
 Cloudflare **Zero Trust → Access → Applications → Add a self-hosted application**:
 
@@ -42,8 +42,15 @@ Cloudflare **Zero Trust → Access → Applications → Add a self-hosted applic
 - **Login method:** **Email OTP** (Cloudflare emails a one-time code; no password
   to manage)
 
+## 4. Custom domain
+
+Pages/Workers project → **Custom domains** → add **`dragonfly-labs.com`** (and
+optionally `www.`). Cloudflare creates the DNS record automatically. If a
+placeholder record exists at the apex, let it be replaced.
+
 Now the whole site, including `configs.local.json`, is unreachable to anyone but
-you. Test in a private window: you should hit the Cloudflare login first.
+you. Test in a private window: you should hit the Cloudflare login first, and
+`dragonfly-labs.com/configs.local.json` must NOT be readable without logging in.
 
 ## Notes
 
