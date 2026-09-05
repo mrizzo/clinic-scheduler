@@ -211,22 +211,30 @@ $("maps").addEventListener("click", () => {
   window.open(`https://www.google.com/maps/search/?api=1&query=${enc(current.loc)}`, "_blank", "noopener");
 });
 
-// Optional preset via ?cfg=<name>, looked up in configs.json. Fills the clinic
-// fields (title, location, notes template incl. a "Doctor:" line) and leaves
-// the date/time/doctor for the user. Unknown/missing configs are ignored.
+// Optional preset via ?cfg=<name>. Presets are merged from configs.json (shipped
+// in the repo — public) and an optional configs.local.json (gitignored — for
+// private/personal clinics you don't want committed); local entries win. Fills
+// the clinic fields (title, location, notes template incl. a "Doctor:" line) and
+// leaves the date/time/doctor for the user. Unknown/missing configs are ignored.
+async function fetchJSON(name) {
+  try {
+    const res = await fetch(name, { cache: "no-store" });
+    return res.ok ? await res.json() : {};
+  } catch { return {}; }   // absent file / offline / file:// — treat as empty
+}
+
 async function loadConfig() {
   const key = new URLSearchParams(location.search).get("cfg");
   if (!key) return;
-  try {
-    const res = await fetch("configs.json", { cache: "no-store" });
-    if (!res.ok) return;
-    const cfg = (await res.json())[key];
-    if (!cfg) return;
-    if (cfg.title) $("title").value = cfg.title;
-    if (cfg.location) $("loc").value = cfg.location;
-    if (cfg.notesTemplate != null) $("notes").value = cfg.notesTemplate;
-    if (cfg.durationMin) $("dur").value = String(cfg.durationMin);
-  } catch { /* offline / file:// — just fall back to generic defaults */ }
+  const [base, local] = await Promise.all([
+    fetchJSON("configs.json"), fetchJSON("configs.local.json"),
+  ]);
+  const cfg = { ...base, ...local }[key];   // configs.local.json overrides
+  if (!cfg) return;
+  if (cfg.title) $("title").value = cfg.title;
+  if (cfg.location) $("loc").value = cfg.location;
+  if (cfg.notesTemplate != null) $("notes").value = cfg.notesTemplate;
+  if (cfg.durationMin) $("dur").value = String(cfg.durationMin);
 }
 
 // Live update on any change; default the date to today, then apply any preset.
