@@ -44,8 +44,11 @@
   button:disabled { opacity: .45; cursor: not-allowed; }
   .out { text-align: center; }
   .out img { width: 208px; height: 208px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px; }
-  .out .hint { font-size: 12px; color: var(--muted); margin: 8px 0 14px; }
-  .out .stack { display: flex; flex-direction: column; gap: 8px; }
+  .out .hint { font-size: 12px; color: var(--muted); margin: 8px 0 12px; }
+  .out .primary { padding: 13px 14px; font-size: 15.5px; }
+  .out .dlhint { font-size: 11.5px; color: var(--muted); margin: 6px 0 14px; }
+  .out .secondary { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+  .out .secondary button { width: auto; flex: 1 1 0; padding: 7px 8px; font-size: 12.5px; font-weight: 500; }
   .placeholder { color: var(--muted); font-size: 13px; padding: 40px 8px; }
   footer { color: var(--muted); font-size: 12px; text-align: center; margin-top: 16px; }
   .when { font-size: 13px; color: var(--muted); margin-top: 10px; min-height: 18px; }
@@ -72,10 +75,10 @@
         <div>
           <label for="dur">Duration</label>
           <select id="dur">
-            <option value="15">15 min</option>
+            <option value="15" selected>15 min</option>
             <option value="30">30 min</option>
             <option value="45">45 min</option>
-            <option value="60" selected>1 hour</option>
+            <option value="60">1 hour</option>
             <option value="90">1.5 hours</option>
             <option value="120">2 hours</option>
           </select>
@@ -92,16 +95,17 @@
     <div class="card out">
       <div id="qrBox"><div class="placeholder">Pick a date &amp; time to generate a QR code</div></div>
       <div class="hint" id="qrHint"></div>
-      <div class="stack">
-        <button id="dl" disabled>⬇︎ Download .ics</button>
-        <button class="ghost" id="mail" disabled>✉️ Email it</button>
-        <button class="ghost" id="copy" disabled>🔗 Copy calendar link</button>
-        <button class="ghost" id="maps" disabled>📍 Open location in Maps</button>
+      <button id="dl" class="primary" disabled>⬇︎ Add to Calendar (.ics)</button>
+      <div class="dlhint">Apple · Google · Outlook — tap the file to add</div>
+      <div class="secondary">
+        <button class="ghost" id="mail" disabled>✉️ Email</button>
+        <button class="ghost" id="copy" disabled>🔗 Copy link</button>
+        <button class="ghost" id="maps" disabled>📍 Maps</button>
       </div>
     </div>
   </div>
 
-  <footer>Runs entirely in your browser — nothing is uploaded. Scan the QR to add it to Google Calendar; use .ics for Apple Calendar / Outlook / anything.</footer>
+  <footer>Runs entirely in your browser — nothing is uploaded. The .ics adds to any calendar (Apple / Google / Outlook); the QR is a quick add to Google Calendar from your phone.</footer>
 </div>
 
 <script type="module">
@@ -203,7 +207,7 @@ $("mail").addEventListener("click", () => {
 });
 $("copy").addEventListener("click", async () => {
   if (!current) return;
-  try { await navigator.clipboard.writeText(gcalUrl(current)); $("copy").textContent = "✓ Copied"; setTimeout(() => $("copy").textContent = "🔗 Copy calendar link", 1500); }
+  try { await navigator.clipboard.writeText(gcalUrl(current)); $("copy").textContent = "✓ Copied"; setTimeout(() => $("copy").textContent = "🔗 Copy link", 1500); }
   catch { prompt("Copy this link:", gcalUrl(current)); }
 });
 $("maps").addEventListener("click", () => {
@@ -237,10 +241,13 @@ async function loadConfig() {
   if (cfg.durationMin) $("dur").value = String(cfg.durationMin);
 }
 
-// Live update on any change; default the date to today, then apply any preset.
+// Live update on any change. Default the date to 4 weeks out (28 days = the
+// same weekday), the usual follow-up cadence — not today, which is never the
+// appointment. The user can still pick any date. Then apply any preset.
 ["title", "date", "time", "dur", "loc", "notes"].forEach((id) =>
   $(id).addEventListener("input", render));
 const t = new Date();
+t.setDate(t.getDate() + 28);
 $("date").value = `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`;
 await loadConfig();
 render();
