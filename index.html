@@ -205,17 +205,24 @@ const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g
 $("gcal").addEventListener("click", () => {
   if (current) window.open(gcalUrl(current), "_blank", "noopener");
 });
-// .ics → on touch devices, hand the file to the OS so the DEFAULT calendar app
-// opens with an "add" prompt (iOS → Apple Calendar, Android → default) instead of
-// silently downloading; on desktop, download it (opens in the default calendar app).
+// Server ics endpoint (Pages Function) that returns a real text/calendar
+// response — so a tap opens the DEFAULT calendar (iPhone → Apple Calendar) in
+// one step. Relative to /clinic-scheduler/, so it resolves to …/clinic-scheduler/ics.
+function icsUrl(ev) {
+  const q = new URLSearchParams({ title: ev.title, start: stampLocal(ev.start), end: stampLocal(ev.end) });
+  if (ev.loc) q.set("location", ev.loc);
+  if (ev.notes) q.set("notes", ev.notes);
+  return "ics?" + q.toString();
+}
+// .ics → use the server endpoint when deployed (one-tap open on mobile); fall
+// back to a client-side download when running locally where the function isn't
+// available (file:// or localhost).
 $("dl").addEventListener("click", () => {
   if (!current) return;
-  const ics = buildICS(current);
-  if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) {
-    window.location.href = "data:text/calendar;charset=utf-8," + enc(ics);
-  } else {
-    download(`${slug(current.title)}.ics`, ics);
-  }
+  const localDev = location.protocol === "file:" ||
+    /^(localhost|127\.0\.0\.1|\[?::1\]?)$/.test(location.hostname);
+  if (localDev) download(`${slug(current.title)}.ics`, buildICS(current));
+  else window.location.href = icsUrl(current);
 });
 $("mail").addEventListener("click", () => {
   if (!current) return;
