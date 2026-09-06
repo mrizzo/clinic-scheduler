@@ -45,8 +45,9 @@
   .out { text-align: center; }
   .out img { width: 208px; height: 208px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px; }
   .out .hint { font-size: 12px; color: var(--muted); margin: 8px 0 12px; }
-  .out .primary { padding: 13px 14px; font-size: 15.5px; }
-  .out .dlhint { font-size: 11.5px; color: var(--muted); margin: 6px 0 14px; }
+  .out .primary { padding: 13px 14px; font-size: 15px; margin-bottom: 8px; }
+  .out .primary.alt { background: #fff; color: var(--accent); border: 1px solid var(--accent); }
+  .out .dlhint { font-size: 11.5px; color: var(--muted); margin: 4px 0 14px; }
   .out .secondary { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
   .out .secondary button { width: auto; flex: 1 1 0; padding: 7px 8px; font-size: 12.5px; font-weight: 500; }
   .placeholder { color: var(--muted); font-size: 13px; padding: 40px 8px; }
@@ -95,8 +96,9 @@
     <div class="card out">
       <div id="qrBox"><div class="placeholder">Pick a date &amp; time to generate a QR code</div></div>
       <div class="hint" id="qrHint"></div>
-      <button id="dl" class="primary" disabled>⬇︎ Add to Calendar (.ics)</button>
-      <div class="dlhint">Apple · Google · Outlook — tap the file to add</div>
+      <button id="gcal" class="primary" disabled>📅 Add to Google Calendar</button>
+      <button id="dl" class="primary alt" disabled>⬇︎ Apple / Outlook (.ics)</button>
+      <div class="dlhint">Opens your calendar with the event ready to save</div>
       <div class="secondary">
         <button class="ghost" id="mail" disabled>✉️ Email</button>
         <button class="ghost" id="copy" disabled>🔗 Copy link</button>
@@ -105,7 +107,7 @@
     </div>
   </div>
 
-  <footer>Runs entirely in your browser — nothing is uploaded. The .ics adds to any calendar (Apple / Google / Outlook); the QR is a quick add to Google Calendar from your phone.</footer>
+  <footer>Runs entirely in your browser — nothing is uploaded. On your phone, tap “Add to Google Calendar” or the .ics; the QR is for adding it from another device (e.g. a printed code).</footer>
 </div>
 
 <script type="module">
@@ -175,7 +177,7 @@ async function render() {
   const ev = readEvent();
   current = ev;
   const on = !!ev;
-  ["dl", "mail", "copy"].forEach((id) => { $(id).disabled = !on; });
+  ["gcal", "dl", "mail", "copy"].forEach((id) => { $(id).disabled = !on; });
   $("maps").disabled = !(ev && ev.loc);
   $("when").textContent = ev ? `📅 ${fmtWhen(ev)} · ${ev.end && Math.round((ev.end - ev.start) / 60000)} min · ${TZ}` : "";
   if (!ev) {
@@ -185,7 +187,7 @@ async function render() {
   }
   const dataUrl = await QRCode.toDataURL(gcalUrl(ev), { margin: 1, width: 416 });
   $("qrBox").innerHTML = `<img src="${dataUrl}" alt="QR code to add ${ev.title} to your calendar" />`;
-  $("qrHint").textContent = "Scan with your phone camera to add it";
+  $("qrHint").textContent = "On another device? Scan this (or a printout)";
 }
 
 function download(name, text) {
@@ -198,7 +200,23 @@ function download(name, text) {
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "event";
 
-$("dl").addEventListener("click", () => { if (current) download(`${slug(current.title)}.ics`, buildICS(current)); });
+// One tap → open the Google Calendar "add event" page in a new tab (on a phone
+// this opens the Google Calendar app/web with the event pre-filled — no copy/paste).
+$("gcal").addEventListener("click", () => {
+  if (current) window.open(gcalUrl(current), "_blank", "noopener");
+});
+// .ics → on touch devices, hand the file to the OS so the DEFAULT calendar app
+// opens with an "add" prompt (iOS → Apple Calendar, Android → default) instead of
+// silently downloading; on desktop, download it (opens in the default calendar app).
+$("dl").addEventListener("click", () => {
+  if (!current) return;
+  const ics = buildICS(current);
+  if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) {
+    window.location.href = "data:text/calendar;charset=utf-8," + enc(ics);
+  } else {
+    download(`${slug(current.title)}.ics`, ics);
+  }
+});
 $("mail").addEventListener("click", () => {
   if (!current) return;
   const body = `${fmtWhen(current)}\n\nAdd to your calendar: ${gcalUrl(current)}` +
