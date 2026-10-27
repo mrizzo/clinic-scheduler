@@ -11,6 +11,12 @@
 # Private/personal clinic presets — never commit (may name a real doctor)
 configs.local.json
 
+# Generated card / QR / stand artifacts for a real clinic (derived from a
+# local preset — may depict a real clinic) — keep local, like configs.local.json
+*-card.png
+*-qr*.png
+*-qr.stl
+
 # wrangler files
 .wrangler
 .dev.vars*
