@@ -205,26 +205,10 @@ function download(name, text) {
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "event";
 
-// Count "added to calendar" clicks in Cloudflare Web Analytics. CF has no
-// custom-event API, but its SPA tracking (on by default) sends a pageview when
-// history.pushState is called — so we push a virtual URL for the conversion and
-// immediately restore the real one. Count these by filtering Path = …/calendar-added
-// in the dashboard. A tracking error must never block the calendar link.
-function trackAdd() {
-  try {
-    const dir = location.pathname.replace(/[^/]*$/, "");   // this page's directory
-    const back = location.pathname + location.search;      // the URL to restore
-    history.pushState({}, "", dir + "calendar-added");     // CF SPA beacon logs this pageview
-    history.replaceState({}, "", back);                    // restore (replaceState fires no pageview)
-  } catch (e) { /* analytics must never break the add action */ }
-}
-
 // One tap → open the Google Calendar "add event" page in a new tab (on a phone
 // this opens the Google Calendar app/web with the event pre-filled — no copy/paste).
 $("gcal").addEventListener("click", () => {
-  if (!current) return;
-  trackAdd();
-  window.open(gcalUrl(current), "_blank", "noopener");
+  if (current) window.open(gcalUrl(current), "_blank", "noopener");
 });
 // Server ics endpoint (Pages Function) that returns a real text/calendar
 // response — so a tap opens the DEFAULT calendar (iPhone → Apple Calendar) in
