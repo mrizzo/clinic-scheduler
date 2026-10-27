@@ -16,12 +16,11 @@
     font: 15px/1.5 system-ui, -apple-system, "Hiragino Sans", "Segoe UI", Roboto, sans-serif;
     padding: 24px;
   }
-  .wrap { max-width: 720px; margin: 0 auto; }
+  .wrap { max-width: 480px; margin: 0 auto; }
   header { margin: 4px 0 20px; }
   header h1 { font-size: 21px; margin: 0; }
   header p { color: var(--muted); margin: 4px 0 0; font-size: 14px; }
-  .cols { display: grid; grid-template-columns: 1fr 260px; gap: 16px; align-items: start; }
-  @media (max-width: 620px) { .cols { grid-template-columns: 1fr; } }
+  .cols { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
   .card {
     background: var(--card); border: 1px solid var(--line);
     border-radius: 12px; padding: 18px;
@@ -48,6 +47,7 @@
   .out .primary { padding: 13px 14px; font-size: 15px; margin-bottom: 8px; }
   .out .primary.alt { background: #fff; color: var(--accent); border: 1px solid var(--accent); }
   .out .dlhint { font-size: 11.5px; color: var(--muted); margin: 4px 0 14px; }
+  .out .qrzone { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
   .out .secondary { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
   .out .secondary button { width: auto; flex: 1 1 0; padding: 7px 8px; font-size: 12.5px; font-weight: 500; }
   .placeholder { color: var(--muted); font-size: 13px; padding: 40px 8px; }
@@ -94,8 +94,6 @@
     </div>
 
     <div class="card out">
-      <div id="qrBox"><div class="placeholder">Pick a date &amp; time to generate a QR code</div></div>
-      <div class="hint" id="qrHint"></div>
       <button id="gcal" class="primary" disabled>📅 Add to Google Calendar</button>
       <button id="dl" class="primary alt" disabled>⬇︎ Apple / Outlook (.ics)</button>
       <div class="dlhint">Opens your calendar with the event ready to save</div>
@@ -103,6 +101,10 @@
         <button class="ghost" id="mail" disabled>✉️ Email</button>
         <button class="ghost" id="copy" disabled>🔗 Copy link</button>
         <button class="ghost" id="maps" disabled>📍 Maps</button>
+      </div>
+      <div class="qrzone">
+        <div id="qrBox"><div class="placeholder">Pick a date &amp; time to generate a QR code</div></div>
+        <div class="hint" id="qrHint"></div>
       </div>
     </div>
   </div>
@@ -185,9 +187,12 @@ async function render() {
     $("qrHint").textContent = "";
     return;
   }
-  const dataUrl = await QRCode.toDataURL(gcalUrl(ev), { margin: 1, width: 416 });
-  $("qrBox").innerHTML = `<img src="${dataUrl}" alt="QR code to add ${ev.title} to your calendar" />`;
-  $("qrHint").textContent = "On another device? Scan this (or a printout)";
+  const gurl = gcalUrl(ev);
+  const dataUrl = await QRCode.toDataURL(gurl, { margin: 1, width: 416 });
+  // The QR encodes the Google Calendar URL; wrap it in a link to the same URL so
+  // tapping it on this device opens the calendar too (you can't scan your own screen).
+  $("qrBox").innerHTML = `<a href="${gurl}" target="_blank" rel="noopener"><img src="${dataUrl}" alt="QR code to add ${ev.title} to your calendar" /></a>`;
+  $("qrHint").textContent = "Tap to add here, or scan from another device";
 }
 
 function download(name, text) {
